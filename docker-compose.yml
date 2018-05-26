@@ -1,8 +1,16 @@
 version: '3'
 services:
   meetup_node:
-    build: .
+    build: docker/node
     ports:
      - 8080:8080
     volumes:
      - ${PWD}/source:/usr/src/app
+    links:
+     - meetup_mongodb
+  meetup_mongodb:
+    image: mongo
+    ports:
+     - 27017:27017
+    volumes:
+     - ${PWD}/data:/data/db
