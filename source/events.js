@@ -74,4 +74,88 @@ module.exports = function(app, db, client){
             });
         }
     });
+
+    app.put('/events/:id/members/:memberId', (req, res, next) => {
+        var id = ObjectId(req.params.id);
+        var memberId = req.params.memberId;
+        db.collection('events').find({'_id': id}).toArray(function (err, result) {
+            if (err || result.matchedCount == 0) {
+                res.status(204).send(null);
+            }
+            else
+            {
+                var bToInsert = true;
+                if (result[0].members === undefined)
+                {
+                    result[0].members = [];
+                }
+                else
+                {
+                    for (i = 0, c = result[0].members.length; i < c; i++)
+                    {
+                        if (result[0].members[i].id == memberId)
+                        {
+                            bToInsert = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (bToInsert)
+                {
+                    result[0].members.push({'id': ObjectId(memberId)});
+
+                    db.collection('events').updateOne({'_id': id}, {$set : result[0]}, (err, result) => {
+                        if (err || result.matchedCount == 0) {
+                            res.status(204).send(null);
+                        }
+                        else
+                        {
+                            res.status(200).send(null);
+                        }
+                    });
+                }
+                else
+                {
+                    res.status(204).send(null);
+                }
+            }
+
+        });
+
+    });
+
+    app.delete('/events/:id/members/:memberId', (req, res, next) => {
+        var id = ObjectId(req.params.id);
+        var memberId = req.params.memberId;
+        db.collection('events').find({'_id': id, 'members.id': ObjectId(memberId)}).toArray(function (err, result) {
+            if (err || result.matchedCount == 0) {
+                res.status(204).send(null);
+            }
+            else
+            {
+                var aEvents = result[0];
+                aEvents.members = [];
+                for (i = 0, c = result[0].members.length; i < c; i++)
+                {
+                    if (result[0].members[i].id != memberId)
+                    {
+                        aEvents.members.push(result[0].members[i]);
+                    }
+                }
+
+                db.collection('events').updateOne({'_id': id}, {$set : result[0]}, (err, result) => {
+                    if (err || result.matchedCount == 0) {
+                        res.status(204).send(null);
+                    }
+                    else
+                    {
+                        res.status(200).send(null);
+                    }
+                });
+            }
+
+        });
+
+    });
 }
